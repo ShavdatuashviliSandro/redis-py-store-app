@@ -1,16 +1,45 @@
-# This is a sample Python script.
+import redis
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+r = redis.Redis()
 
+id = 1
+product = [
+    {
+        'color': 'black',
+        'price': 49.99,
+        'style': 'fitted',
+        'quantity': 5,
+        'nPurchased': 0
+    },
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+    {
+        'color': 'maroon',
+        'price': 60,
+        'style': 'Office Shirt',
+        'quantity': '6',
+        'nPurchased': 0
+    },
 
+    {
+        'color': 'Pink',
+        'price': 79.99,
+        'style': 'Over Shirt',
+        'quantity': '3',
+        'nPurchased': 0
+    }
+]
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+shirts = dict()
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+for i in product:
+    key = f"shirt:{id}"
+    shirts[key] = i
+    id += 1
+
+print(shirts)
+
+for s_id, shirt in shirts.items():
+    for field, value in shirt.items():
+        r.hset(s_id, field, value)
+
+r.close()
