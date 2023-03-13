@@ -38,8 +38,12 @@ for i in product:
 
 print(shirts)
 
+pipe = r.pipeline()
+
 for s_id, shirt in shirts.items():
     for field, value in shirt.items():
         r.hset(s_id, field, value)
+
+pipe.execute()
 
 r.close()
