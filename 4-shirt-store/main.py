@@ -12,8 +12,22 @@ def scan_keys(pattern, pos: int = 0) -> list:
             break
     return shirts
 
-def buy_items():
+
+def buy_items(r: redis.Redis, itemid) -> None:
+    pipe = r.pipeline()
+
+    # while True:
+    nleft: bytes = r.hget(itemid, "quantity")
+    if nleft > b"0":
+        pipe.hincrby(itemid, "quantity", -1)
+        pipe.hincrby(itemid, "npurchased", +1)
+        pipe.execute()
+        # break
+    else:
+        print("Sorry ", itemid, "out of stock")
+    return None
 
 
 shirts = scan_keys("shirt:*")
 print(shirts)
+buy_items(r, shirts[0])
