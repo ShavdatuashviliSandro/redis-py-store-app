@@ -1,6 +1,12 @@
 import redis
+import logging
 
 r = redis.Redis()
+logging.basicConfig()
+
+
+class OutOfStockError(Exception):
+    """Raised when item is out of stock"""
 
 
 def scan_keys(pattern, pos: int = 0) -> list:
@@ -16,17 +22,25 @@ def scan_keys(pattern, pos: int = 0) -> list:
 def buy_items(r: redis.Redis, itemid) -> None:
     pipe = r.pipeline()
 
-    # while True:
-    nleft: bytes = r.hget(itemid, "quantity")
-    if nleft > b"0":
-        pipe.hincrby(itemid, "quantity", -1)
-        pipe.hincrby(itemid, "npurchased", +1)
-        pipe.execute()
-        # break
-    else:
-        print("Sorry ", itemid, "out of stock")
-    return None
+    while True:
+        try:
+            pipe.watch(itemid)
+            nleft: bytes = r.hget(itemid, "quantity")
+            if nleft > b"0":
+                pipe.multi()
+                pipe.hincrby(itemid, "quantity", -1)
+                pipe.hincrby(itemid, "npurchased", +1)
+                pipe.execute()
+                break
+            else:
+                pipe.unwatch()
+                raise OutOfStockError(
+                    f"Sorry {itemid} is out of stock"
+                )
+        except redis.WatchError:
+            logging.warning('Error in watch, retrying')
 
+    return None
 
 shirts = scan_keys("shirt:*")
 print(shirts)
